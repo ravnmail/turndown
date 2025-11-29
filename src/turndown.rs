@@ -82,7 +82,7 @@ impl Default for Options {
         // Create default tracking image regex with common tracking indicators
         // This regex targets specific patterns that are almost certainly tracking pixels
         let tracking_regex = Regex::new(
-            r"(?i)(pixel|beacon|track|analytics|spacer|tagpixel|emimp/ip_|utm_|clicktracking)",
+            r"(?i)(pixel|beacon|track|analytics|spacer|tagpixel|emimp/ip_|utm_|clicktracking|transp\.gif)",
         )
         .ok();
 
