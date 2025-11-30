@@ -1,6 +1,6 @@
 [package]
 name = "turndown"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Michael Wallner <m.wallner@coderscantina.com>"]
 description = "An opionated Rust port of Turndown.js"
 edition = "2021"
@@ -9,6 +9,7 @@ license = "MIT"
 keywords = ["markdown", "html", "converter", "turndown"]
 exclude = [".github"]
 rust-version = "1.65.0"
+repository = "https://github.com/ravnmail/turndown"
 
 [[bin]]
 name = "turndown"
