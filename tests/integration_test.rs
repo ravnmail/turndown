@@ -254,17 +254,12 @@ fn test_escape_markdown() {
 
 #[test]
 fn test_tracking_image_stripping() {
-    use regex::Regex;
     use turndown::TurndownOptions;
 
     // Create options with tracking image stripping enabled
     let mut options = TurndownOptions::default();
     options.strip_tracking_images = true;
     options.strip_images_without_alt = true;
-    options.tracking_image_regex = Regex::new(
-        r"(?i)(pixel|beacon|track|analytics|spacer|tagpixel|emimp/ip_|utm_|clicktracking)",
-    )
-    .ok();
 
     let turndown = turndown::Turndown::with_options(options);
 
@@ -287,6 +282,36 @@ fn test_tracking_image_stripping() {
     // Should NOT contain tracking images
     assert!(!result.contains("track.php"));
     assert!(!result.contains("beacon"));
+}
+
+#[test]
+fn test_custom_tracking_regex() {
+    use regex::Regex;
+    use turndown::TurndownOptions;
+
+    // Create options with custom tracking regex
+    let mut options = TurndownOptions::default();
+    options.strip_tracking_images = true;
+    options.tracking_image_regex = Some(Regex::new(r"foo\.php").unwrap());
+
+    let turndown = turndown::Turndown::with_options(options);
+
+    let html = r#"
+        <p>Start</p>
+        <img src="https://example.com/foo.php" alt=""/>
+        <img src="https://example.com/normal_image.png" alt="Normal Image"/>
+        <p>End</p>
+    "#;
+
+    let result = turndown.convert(html);
+
+    // Should contain normal content and image
+    assert!(result.contains("Start"));
+    assert!(result.contains("End"));
+    assert!(result.contains("Normal Image"));
+
+    // Should NOT contain the tracking pixel
+    assert!(!result.contains("tracking_pixel.php"));
 }
 
 #[test]

@@ -10,20 +10,33 @@ use std::fmt;
 /// Configuration options for Turndown
 #[derive(Clone)]
 pub struct Options {
+    /// Conversion rules
     pub rules: HashMap<String, Rule>,
+    /// Style for rendering headings: Setext or Atx (default: Atx)
     pub heading_style: HeadingStyle,
+    /// Used to render horizontal rules (default: * * *)
     pub hr: String,
+    /// Marker used for bullet lists (default: *)
     pub bullet_list_marker: String,
+    /// Style for rendering code blocks: Indented or Fenced (default: Fenced)
     pub code_block_style: CodeBlockStyle,
+    /// Delimiter used for fenced code blocks (default: ```)
     pub fence: String,
+    /// Delimiter used for emphasis (default: _)
     pub em_delimiter: String,
+    /// Delimiter used for strong emphasis (default: **)
     pub strong_delimiter: String,
+    /// Style for rendering links: Inlined or Referenced (default: Inlined)
     pub link_style: LinkStyle,
+    /// Style for link references: Full, Collapsed, or Shortcut (default: Full)
     pub link_reference_style: LinkReferenceStyle,
+    /// String used for line breaks (default: two spaces)
     pub br: String,
-    pub preformatted_code: bool,
+    /// Options for stripping tracking images (default: false)
     pub strip_tracking_images: bool,
+    /// Regex to identify tracking images, comes with a sensible default
     pub tracking_image_regex: Option<Regex>,
+    /// Option to strip images without alt attributes (default: false)
     pub strip_images_without_alt: bool,
 }
 
@@ -41,7 +54,6 @@ impl fmt::Debug for Options {
             .field("link_style", &self.link_style)
             .field("link_reference_style", &self.link_reference_style)
             .field("br", &self.br)
-            .field("preformatted_code", &self.preformatted_code)
             .field("strip_tracking_images", &self.strip_tracking_images)
             .field(
                 "tracking_image_regex",
@@ -82,7 +94,7 @@ impl Default for Options {
         // Create default tracking image regex with common tracking indicators
         // This regex targets specific patterns that are almost certainly tracking pixels
         let tracking_regex = Regex::new(
-            r"(?i)(pixel|beacon|track|analytics|spacer|tagpixel|emimp/ip_|utm_|clicktracking|transp\.gif)",
+            r"(?i)(pixel|beacon|\.com/ts|splash.tools/o/|tr/op|track|klclick.com/o/|ho\.gif|transp|msg_del_|analytics|spacer|tagpixel|emimp/ip_|utm_|/open\?)",
         )
         .ok();
 
@@ -98,7 +110,6 @@ impl Default for Options {
             link_style: LinkStyle::Inlined,
             link_reference_style: LinkReferenceStyle::Full,
             br: "  ".to_string(),
-            preformatted_code: false,
             strip_tracking_images: false,
             tracking_image_regex: tracking_regex,
             strip_images_without_alt: false,
