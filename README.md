@@ -26,7 +26,7 @@ output to their specific needs.
   - Code block styles: Fenced (` ``` `) or Indented
   - Link styles: Inline or Reference
 - Performs well on email newsletters, marketing emails and human-written emails.
-- Filter tracking pixels and unnecessary elements commonly found in email HTML.
+- Filter tracking pixels and unnecessary elements commonly found in email HTML. (disabled by default)
 
 ## Usage
 
@@ -36,6 +36,10 @@ Add this to your `Cargo.toml`:
 [dependencies]
 turndown = "0.1"
 ```
+
+### Configuration
+
+
 
 ### Basic Example
 
@@ -71,17 +75,53 @@ This crate includes a CLI tool for converting HTML to Markdown from the command 
 
 ```bash
 # Convert HTML from stdin to Markdown
-echo "<h1>Hello</h1>" | markdown
+echo "<h1>Hello</h1>" | turndown
 ```
 
 ## Configuration Options
 
 The `TurndownOptions` struct provides fine-grained control over the conversion:
 
-- `heading_style`: Choose between ATX and Setext heading styles.
-- `code_block_style`: Choose between fenced and indented code blocks.
-- `link_style`: Choose between inline and reference link styles.
-- `horizontal_rule`: Customize the horizontal rule character sequence.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `heading_style` | `HeadingStyle` | `Atx` | Heading style: `Atx` (`# Heading`) or `Setext` (`Heading\n=======`) |
+| `hr` | `String` | `* * *` | String used to render horizontal rules |
+| `bullet_list_marker` | `String` | `*` | Marker used for bullet lists (can be `*`, `+`, or `-`) |
+| `code_block_style` | `CodeBlockStyle` | `Fenced` | Code block style: `Fenced` (` ``` `) or `Indented` |
+| `fence` | `String` | ` ``` ` | Delimiter used for fenced code blocks |
+| `em_delimiter` | `String` | `_` | Delimiter used for emphasis/italics (can be `_` or `*`) |
+| `strong_delimiter` | `String` | `**` | Delimiter used for strong emphasis/bold |
+| `link_style` | `LinkStyle` | `Inlined` | Link style: `Inlined` or `Referenced` |
+| `link_reference_style` | `LinkReferenceStyle` | `Full` | Link reference style: `Full`, `Collapsed`, or `Shortcut` (only for `Referenced` link style) |
+| `br` | `String` | Two spaces | String used to represent line breaks in Markdown |
+| `strip_tracking_images` | `bool` | `false` | Strip tracking pixels and beacons from output |
+| `tracking_image_regex` | `Option<Regex>` | Sensible default | Custom regex pattern to identify tracking images |
+| `strip_images_without_alt` | `bool` | `false` | Strip images that lack alt attributes |
+
+### Configuration Examples
+
+```rust
+use turndown::{Turndown, TurndownOptions, HeadingStyle, CodeBlockStyle, LinkStyle};
+
+// Use Setext headings and indented code blocks
+let mut options = TurndownOptions::default();
+options.heading_style = HeadingStyle::Setext;
+options.code_block_style = CodeBlockStyle::Indented;
+
+let turndown = Turndown::with_options(options);
+
+// Strip tracking images from email newsletters
+let mut options = TurndownOptions::default();
+options.strip_tracking_images = true;
+
+let turndown = Turndown::with_options(options);
+
+// Use reference links and customize link reference style
+let mut options = TurndownOptions::default();
+options.link_style = LinkStyle::Referenced;
+
+let turndown = Turndown::with_options(options);
+```
 
 ## Architecture
 
