@@ -17,6 +17,10 @@ varied email HTML content. This version of `turndown` aims to fill that gap by
 offering a highly customizable conversion process, allowing users to tailor the
 output to their specific needs.
 
+This crate was created to handle the mail conversion needs of [RAVN Mail](https://www.ravnmail.com), 
+the open-source email client for digital natives. Star [RAVN on GitHub](https://github.com/ravnmail/ravn)
+if you like it!
+
 ## Features
 
 - Drop-in HTML to Markdown converter with sensible defaults for email content.
