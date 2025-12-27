@@ -1,6 +1,6 @@
 [package]
 name = "turndown"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Michael Wallner <m.wallner@coderscantina.com>"]
 description = "An opionated Rust port of Turndown.js"
 edition = "2021"

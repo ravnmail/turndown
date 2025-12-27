@@ -70,16 +70,20 @@ fn hidden_preheader_rule() -> Rule {
             node.node_name == "DIV"
                 && (node.get_attribute("data-email-preheader").is_some()
                     || (node.get_attribute("style")
-                        .map(|s| s.contains("visibility:hidden") && s.contains("height:0"))
+                        .map(|s| {
+                            // Match visibility:hidden with height:0
+                            (s.contains("visibility:hidden") && s.contains("height:0"))
+                            // Also match display:none with overflow:hidden (common email preheader pattern)
+                            || (s.contains("display:none") && s.contains("overflow:hidden"))
+                        })
                         .unwrap_or(false)
                         && node.get_attribute("class")
                             .map(|c| c.contains("h-0") && c.contains("opacity-0"))
-                            .unwrap_or(false)))
+                            .unwrap_or(true)))
         }),
-        replacement: |content, _, _| {
-            // Keep the content inline - no block formatting
-            // This allows preheader text and invisible characters to stay on same line
-            content.trim().to_string()
+        replacement: |_, _, _| {
+            // Remove hidden preheader entirely - don't include in output
+            String::new()
         },
     }
 }
