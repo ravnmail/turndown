@@ -27,6 +27,7 @@ pub fn get_rules() -> HashMap<String, Rule> {
     );
     rules.insert("style".to_string(), style_rule());
     rules.insert("script".to_string(), script_rule());
+    rules.insert("hiddenPreheader".to_string(), hidden_preheader_rule());
 
     rules
 }
@@ -58,6 +59,26 @@ fn script_rule() -> Rule {
     Rule {
         filter: RuleFilter::String("script".to_string()),
         replacement: |_, _, _| String::new(),
+    }
+}
+
+fn hidden_preheader_rule() -> Rule {
+    Rule {
+        filter: RuleFilter::Function(|node, _| {
+            node.node_name == "DIV" 
+                && (node.get_attribute("data-email-preheader").is_some()
+                    || (node.get_attribute("style")
+                        .map(|s| s.contains("visibility:hidden") && s.contains("height:0"))
+                        .unwrap_or(false)
+                        && node.get_attribute("class")
+                            .map(|c| c.contains("h-0") && c.contains("opacity-0"))
+                            .unwrap_or(false)))
+        }),
+        replacement: |content, _, _| {
+            // Keep the content inline - no block formatting
+            // This allows preheader text and invisible characters to stay on same line
+            content.trim().to_string()
+        },
     }
 }
 
@@ -186,6 +207,18 @@ fn inline_link_rule() -> Rule {
                 && node.get_attribute("href").is_some()
         }),
         replacement: |content, node, _| {
+            let normalized_content = content
+                .trim()
+                .lines()
+                .map(|line| line.trim())
+                .filter(|line| !line.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            if normalized_content.starts_with('[') && normalized_content.contains("](") {
+                return normalized_content;
+            }
+
             let href = node.get_attribute("href").unwrap_or_default();
             let href_escaped = href.replace("(", "\\(").replace(")", "\\)");
             let title = node.get_attribute("title").unwrap_or_default();
@@ -194,7 +227,7 @@ fn inline_link_rule() -> Rule {
             } else {
                 String::new()
             };
-            format!("[{}]({}{})", content, href_escaped, title_part)
+            format!("[{}]({}{})", normalized_content, href_escaped, title_part)
         },
     }
 }
@@ -277,6 +310,13 @@ fn image_rule() -> Rule {
             let alt = node.get_attribute("alt").unwrap_or_default();
             let src = node.get_attribute("src").unwrap_or_default();
             let title = node.get_attribute("title").unwrap_or_default();
+            let width = node.get_attribute("width").unwrap_or_default();
+            let height = node.get_attribute("height").unwrap_or_default();
+
+            // Always strip 1x1 pixel images without alt text (common tracking pixels)
+            if alt.trim().is_empty() && width == "1" && height == "1" {
+                return String::new();
+            }
 
             if options.strip_tracking_images
                 && is_tracking_image(
