@@ -252,11 +252,23 @@ impl Turndown {
         let mut content = self.process_with_full_context(node, list_context.clone(), new_in_pre);
 
         let whitespace = node.flanking_whitespace();
+
+        let is_table_cell = matches!(node.node_name.as_str(), "TD" | "TH");
+
+        if node.is_block() {
+            content = content.trim_start().to_string();
+        }
+
+        let (use_leading, use_trailing) = if is_table_cell || node.is_block() {
+            (String::new(), String::new())
+        } else {
+            (whitespace.leading.clone(), whitespace.trailing.clone())
+        };
+
         if !whitespace.leading.is_empty() || !whitespace.trailing.is_empty() {
             content = content.trim().to_string();
         }
 
-        // Pass list context and pre context to replacement function via node attribute temporarily
         let mut node_with_context = node.clone();
         if let Some(ctx) = list_context {
             node_with_context.set_attribute("data-list-type", &ctx.list_type);
@@ -266,23 +278,46 @@ impl Turndown {
             node_with_context.set_attribute("data-in-pre", "true");
         }
 
-        // Determine rule AFTER setting context attributes
         let rule = self.rules.for_node(&node_with_context);
 
         format!(
             "{}{}{}",
-            whitespace.leading,
+            use_leading,
             (rule.replacement)(&content, &node_with_context, &self.options),
-            whitespace.trailing
+            use_trailing
         )
     }
 
     /// Post-processes the output
     fn post_process(&self, output: &str) -> String {
-        let trimmed = output
+        let collapsed = self.collapse_excessive_newlines(output);
+        let trimmed = collapsed
             .trim_start_matches(|c| c == '\t' || c == '\r' || c == '\n')
             .trim_end_matches(|c| c == '\t' || c == '\r' || c == '\n' || c == ' ');
+
         trimmed.to_string()
+    }
+
+    /// Collapses sequences of 3+ newlines down to 2 newlines (representing 1 blank line)
+    fn collapse_excessive_newlines(&self, s: &str) -> String {
+        let mut result = String::new();
+        let mut consecutive_newlines = 0;
+
+        for ch in s.chars() {
+            if ch == '\n' {
+                consecutive_newlines += 1;
+                if consecutive_newlines <= 2 {
+                    result.push(ch);
+                }
+            } else if ch == ' ' || ch == '\t' || ch == '\r' {
+                result.push(ch);
+            } else {
+                consecutive_newlines = 0;
+                result.push(ch);
+            }
+        }
+
+        result
     }
 
     /// Escapes Markdown special characters

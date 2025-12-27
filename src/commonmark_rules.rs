@@ -28,6 +28,8 @@ pub fn get_rules() -> HashMap<String, Rule> {
     rules.insert("style".to_string(), style_rule());
     rules.insert("script".to_string(), script_rule());
     rules.insert("hiddenPreheader".to_string(), hidden_preheader_rule());
+    rules.insert("superscript".to_string(), superscript_rule());
+    rules.insert("subscript".to_string(), subscript_rule());
 
     rules
 }
@@ -65,7 +67,7 @@ fn script_rule() -> Rule {
 fn hidden_preheader_rule() -> Rule {
     Rule {
         filter: RuleFilter::Function(|node, _| {
-            node.node_name == "DIV" 
+            node.node_name == "DIV"
                 && (node.get_attribute("data-email-preheader").is_some()
                     || (node.get_attribute("style")
                         .map(|s| s.contains("visibility:hidden") && s.contains("height:0"))
@@ -85,7 +87,13 @@ fn hidden_preheader_rule() -> Rule {
 fn paragraph_rule() -> Rule {
     Rule {
         filter: RuleFilter::String("p".to_string()),
-        replacement: |content, _, _| format!("\n\n{}\n\n", content),
+        replacement: |content, node, _| {
+            if node.get_attribute("data-list-type").is_some() {
+                content.to_string()
+            } else {
+                format!("\n\n{}\n\n", content)
+            }
+        },
     }
 }
 
@@ -339,6 +347,34 @@ fn image_rule() -> Rule {
                 format!("![{}]({}{})", alt, src, title_part)
             } else {
                 String::new()
+            }
+        },
+    }
+}
+
+fn superscript_rule() -> Rule {
+    Rule {
+        filter: RuleFilter::String("sup".to_string()),
+        replacement: |content, _node, _| {
+            let trimmed = content.trim();
+            if trimmed.is_empty() {
+                "<sup></sup>".to_string()
+            } else {
+                format!("<sup>{}</sup> ", trimmed)
+            }
+        },
+    }
+}
+
+fn subscript_rule() -> Rule {
+    Rule {
+        filter: RuleFilter::String("sub".to_string()),
+        replacement: |content, _node, _| {
+            let trimmed = content.trim();
+            if trimmed.is_empty() {
+                "<sub></sub>".to_string()
+            } else {
+                format!("<sub>{}</sub> ", trimmed)
             }
         },
     }

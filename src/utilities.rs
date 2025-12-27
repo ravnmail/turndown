@@ -49,7 +49,11 @@ pub fn collapse_whitespace(s: &str) -> String {
         }
     }
 
-    result
+    if result.trim().is_empty() {
+        String::new()
+    } else {
+        result
+    }
 }
 
 /// Trims leading newlines from a string
