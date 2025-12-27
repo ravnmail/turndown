@@ -30,6 +30,9 @@ pub fn get_rules() -> HashMap<String, Rule> {
     rules.insert("hiddenPreheader".to_string(), hidden_preheader_rule());
     rules.insert("superscript".to_string(), superscript_rule());
     rules.insert("subscript".to_string(), subscript_rule());
+    rules.insert("listItemTableCell".to_string(), list_item_table_cell_rule());
+    rules.insert("listItemTableRow".to_string(), list_item_table_row_rule());
+    rules.insert("listItemPrefix".to_string(), list_item_prefix_rule());
 
     rules
 }
@@ -380,6 +383,75 @@ fn subscript_rule() -> Rule {
             } else {
                 format!("<sub>{}</sub> ", trimmed)
             }
+        },
+    }
+}
+
+fn list_item_table_cell_rule() -> Rule {
+    Rule {
+        filter: RuleFilter::Function(|node, _| {
+            if node.node_name != "TD" && node.node_name != "TH" {
+                return false;
+            }
+
+            if let Some(class) = node.get_attribute("class") {
+                class.contains("list-item")
+            } else {
+                false
+            }
+        }),
+        replacement: |content, _node, _| {
+            format!(" {}", content.trim())
+        },
+    }
+}
+
+fn list_item_table_row_rule() -> Rule {
+    Rule {
+        filter: RuleFilter::Function(|node, _| {
+            if node.node_name != "TR" {
+                return false;
+            }
+
+            node.children.iter().any(|child| {
+                if child.node_name == "TD" || child.node_name == "TH" {
+                    if let Some(class) = child.get_attribute("class") {
+                        class.contains("list-item")
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            })
+        }),
+        replacement: |content, _node, options| {
+            let trimmed = content.trim();
+            let cleaned = trimmed
+                .trim_start_matches('•')
+                .trim_start();
+
+            let bullet = format!("{} ", options.bullet_list_marker);
+            format!("{}{}\n", bullet, cleaned)
+        },
+    }
+}
+
+fn list_item_prefix_rule() -> Rule {
+    Rule {
+        filter: RuleFilter::Function(|node, _| {
+            if node.node_name != "TD" && node.node_name != "TH" {
+                return false;
+            }
+
+            if let Some(class) = node.get_attribute("class") {
+                class.contains("list-item-prefix")
+            } else {
+                false
+            }
+        }),
+        replacement: |_, _node, _| {
+            String::new()
         },
     }
 }
